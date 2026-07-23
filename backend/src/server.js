@@ -13,10 +13,24 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://bed-manager-tan.vercel.app"
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
@@ -35,10 +49,7 @@ const server = http.createServer(app);
 
 const { Server } = require("socket.io");
 const io = new Server(server, {
-  cors: { 
-    origin: ["http://localhost:5173", "http://localhost:3000"],
-    credentials: true
-  } 
+  cors: corsOptions
 });
 
 // make io available to routes/controllers
