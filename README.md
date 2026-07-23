@@ -132,7 +132,7 @@ Bed/
 3. **Create `.env.development` file:**
 
    ```env
-   VITE_API_URL=http://localhost:5001
+   VITE_API_BASE=http://localhost:5001/api
    ```
 
 4. **Start the development server:**
@@ -400,7 +400,7 @@ NODE_ENV=development
 ### Frontend (.env.development)
 
 ```
-VITE_API_URL=http://localhost:5001
+VITE_API_BASE=http://localhost:5001/api
 ```
 
 ---
