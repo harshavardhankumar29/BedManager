@@ -4,6 +4,20 @@ A full-stack web application for managing hospital bed availability, patient adm
 
 ---
 
+## 🌐 Live Demo & Demo Credentials
+
+* **Live Web Application**: [https://bed-manager-tan.vercel.app/](https://bed-manager-tan.vercel.app/)
+* **Live API Backend**: [https://bedmanager-backend.onrender.com](https://bedmanager-backend.onrender.com)
+
+### 🔑 Test Login Credentials
+
+| Role | Email | Password | Capabilities |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@example.com` | `Admin@123` | Full access: Add/edit beds, register staff, admit/transfer/discharge patients, PDF summary, CSV exports |
+| **Admin (Seeder)** | `seeder@hospital.com` | `password123` | Full access to manage beds, emergency waitlist, and patient roster |
+
+---
+
 ## 📋 Project Overview
 
 This application helps hospital administrators and staff:
