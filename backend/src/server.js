@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const bedRoutes = require("./routes/bedRoutes");
 const patientRoutes = require("./routes/patientRoutes");
@@ -12,9 +13,12 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true
+}));
+app.use(cookieParser());
 app.use(express.json());
-
 
 app.use("/api/auth", authRoutes);
 
@@ -31,7 +35,10 @@ const server = http.createServer(app);
 
 const { Server } = require("socket.io");
 const io = new Server(server, {
-  cors: { origin: "*" } // allow all origins in dev; tighten in production
+  cors: { 
+    origin: ["http://localhost:5173", "http://localhost:3000"],
+    credentials: true
+  } 
 });
 
 // make io available to routes/controllers

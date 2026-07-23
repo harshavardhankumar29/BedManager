@@ -1,20 +1,6 @@
 // backend/src/controllers/bedController.js
 const Bed = require("../models/Bed");
-
-// helper: emit full beds list (populated)
-const emitBedsRefresh = async (req) => {
-  try {
-    const io = req.app.get("io");
-    if (!io) return;
-    const beds = await Bed.find().populate({
-      path: "patientId",
-      select: "name _id" // only bring name and id
-    });
-    io.emit("beds:refresh", beds);
-  } catch (err) {
-    console.error("emitBedsRefresh error:", err);
-  }
-};
+const { emitBedsRefresh } = require("../utils/socketHelper");
 
 // Add bed
 exports.addBed = async (req, res) => {

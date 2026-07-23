@@ -74,3 +74,22 @@ exports.registerStaff = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password"); // Exclude passwords
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await User.findByIdAndDelete(id);
+    res.status(200).json({ message: "User deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -2,12 +2,20 @@
 const express = require("express");
 const router = express.Router();
 const {
-  admitPatient,
-  dischargePatient,
-  transferPatient,
-  getPatients,
-  getPatient,
+    admitPatient,
+    dischargePatient,
+    transferPatient,
+    getPatients,
+    getPatient,
+    addToWaitlist,
+    getWaitlist,
+    deleteWaitlist
 } = require("../controllers/patientController");
+
+// Waitlist routes
+router.post("/waitlist", addToWaitlist);
+router.get("/waitlist", getWaitlist);
+router.delete("/waitlist/:id", deleteWaitlist);
 
 // Admit -> finds an available bed and links it
 router.post("/admit", admitPatient);
@@ -25,3 +33,4 @@ router.get("/", getPatients);
 router.get("/:id", getPatient);
 
 module.exports = router;
+

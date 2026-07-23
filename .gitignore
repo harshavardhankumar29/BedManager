@@ -12,8 +12,11 @@ yarn.lock
 .Spotlight-V100
 .Trashes
 
-# Environment Variables (local overrides only)
+# Environment Variables
+.env
 .env.local
+.env.development
+.env.production
 .env.development.local
 .env.test.local
 .env.production.local

@@ -1,4 +1,4 @@
-# Hospital Bed Management System
+# BedManager — Real-Time Hospital Bed Management System
 
 A full-stack web application for managing hospital bed availability, patient admissions, and staff management. Built with Node.js/Express backend and React frontend with real-time updates via Socket.IO.
 

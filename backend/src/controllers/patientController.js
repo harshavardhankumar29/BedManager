@@ -1,23 +1,17 @@
 // src/controllers/patientController.js
 const Patient = require("../models/Patient");
 const Bed = require("../models/Bed");
+const Waitlist = require("../models/Waitlist");
+const { emitBedsRefresh } = require("../utils/socketHelper");
 
-// helper to emit beds refresh
-const emitBedsRefresh = async (req) => {
-  try {
-    const io = req.app.get("io");
-    if (!io) return;
-    const beds = await Bed.find();
-    io.emit("beds:refresh", beds);
-  } catch (err) {
-    console.error("emitBedsRefresh error:", err);
-  }
-};
-
-// Admit a patient and allocate an available bed (no transactions)
+// Admit a patient and allocate an available bed
 exports.admitPatient = async (req, res) => {
+  let reservedBed = null;
   try {
     const { name, age, disease, preferredWard, preferredType } = req.body;
+    if (!name || age === undefined || age === null) {
+      return res.status(400).json({ error: "Patient name and age are required" });
+    }
 
     // Atomically reserve a bed by changing status from "Available" -> "Occupied"
     const bedQuery = { status: "Available" };
@@ -31,8 +25,9 @@ exports.admitPatient = async (req, res) => {
     );
 
     if (!bed) {
-      return res.status(404).json({ error: "No available bed found" });
+      return res.status(404).json({ error: "No available bed found matching criteria" });
     }
+    reservedBed = bed;
 
     // Create patient and link bed
     const patient = await Patient.create({
@@ -54,11 +49,19 @@ exports.admitPatient = async (req, res) => {
     res.status(201).json({ patient, bed });
   } catch (error) {
     console.error("admitPatient error:", error);
+    if (reservedBed) {
+      // Revert bed allocation on error
+      await Bed.findByIdAndUpdate(reservedBed._id, {
+        status: "Available",
+        patientId: null
+      }).catch((e) => console.error("Rollback bed error:", e));
+      await emitBedsRefresh(req);
+    }
     res.status(500).json({ error: error.message });
   }
 };
 
-// Discharge patient and release bed (no transactions)
+// Discharge patient and release bed
 exports.dischargePatient = async (req, res) => {
   try {
     const { id } = req.params; // patient id
@@ -87,8 +90,9 @@ exports.dischargePatient = async (req, res) => {
   }
 };
 
-// Transfer patient to another available bed (no transactions)
+// Transfer patient to another available bed
 exports.transferPatient = async (req, res) => {
+  let reservedNewBed = null;
   try {
     const { id } = req.params; // patient id
     const { targetWard, targetType } = req.body;
@@ -110,10 +114,13 @@ exports.transferPatient = async (req, res) => {
     if (!newBed) {
       return res.status(404).json({ error: "No available target bed" });
     }
+    reservedNewBed = newBed;
+
+    const oldBedId = patient.bedId;
 
     // Release old bed if exists
-    if (patient.bedId) {
-      await Bed.findByIdAndUpdate(patient.bedId, {
+    if (oldBedId) {
+      await Bed.findByIdAndUpdate(oldBedId, {
         status: "Available",
         patientId: null
       });
@@ -134,6 +141,13 @@ exports.transferPatient = async (req, res) => {
     res.status(200).json({ patient, newBed });
   } catch (error) {
     console.error("transferPatient error:", error);
+    if (reservedNewBed) {
+      await Bed.findByIdAndUpdate(reservedNewBed._id, {
+        status: "Available",
+        patientId: null
+      }).catch((e) => console.error("Rollback transfer bed error:", e));
+      await emitBedsRefresh(req);
+    }
     res.status(500).json({ error: error.message });
   }
 };
@@ -155,6 +169,47 @@ exports.getPatient = async (req, res) => {
     const patient = await Patient.findById(id).populate("bedId");
     if (!patient) return res.status(404).json({ error: "Not found" });
     res.status(200).json(patient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Waitlist Management
+exports.addToWaitlist = async (req, res) => {
+  try {
+    const { patientName, age, contact, disease, preferredWard, preferredType, priority } = req.body;
+    if (!patientName || !age) {
+      return res.status(400).json({ error: "Patient name and age are required" });
+    }
+    const item = await Waitlist.create({
+      patientName,
+      age,
+      contact,
+      disease,
+      preferredWard: preferredWard || "General",
+      preferredType: preferredType || "General",
+      priority: priority || "High"
+    });
+    res.status(201).json(item);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getWaitlist = async (req, res) => {
+  try {
+    const list = await Waitlist.find({ status: "Waiting" }).sort({ createdAt: -1 });
+    res.status(200).json(list);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteWaitlist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Waitlist.findByIdAndDelete(id);
+    res.status(200).json({ message: "Removed from waitlist" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
